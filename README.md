@@ -1,8 +1,8 @@
 # CoPRS: Learning Positional Prior from Chain-of-Thought for Reasoning Segmentation
 
-[Zhenyu Lu](https://github.com/ZhenyuLU-Heliodore), Liupeng Li, Jinpeng Wang, Yan Feng, Bin Chen, Ke Chen, Yaowei Wang
+[Zhenyu Lu](https://github.com/ZhenyuLU-Heliodore), Liupeng Li, [Jinpeng Wang]( https://scholar.google.com/citations?user=853-0n8AAAAJ), Yan Feng, Bin Chen, Ke Chen, Yaowei Wang
 
-[[`Paper`](https://arxiv.org/abs/2510.11173)] [[`Modeling`](https://github.com/ZhenyuLU-Heliodore/CoPRS/tree/main/verl/modeling.py)] [[`Datasets`](#datasets)] [[`Training`](https://github.com/ZhenyuLU-Heliodore/CoPRS/tree/main/verl/trainer)] [[`Local Deployment`](#local-deployment)] [[`BibTeX`](#citing-coprs)]
+[[`Paper`](https://arxiv.org/abs/2510.11173)] [[`Modeling`](https://github.com/ZhenyuLU-Heliodore/CoPRS/tree/main/verl/modeling.py)] [[`Datasets`](#datasets)] [[`Training`](https://github.com/ZhenyuLU-Heliodore/CoPRS/tree/main/verl/trainer)] [[`Local Deployment`](#local-deployment)] [[`BibTeX`](#citing-coprs)] [[`Contact`](#contact)]
 
 CoPRS bridges language reasoning and segmentation via a **differentiable, interpretable positional prior**, instantiated as a heatmap.  
 A learnable concentration token aggregates image–instruction context to generate this prior, which a lightweight decoder refines into precise masks.
@@ -73,3 +73,6 @@ If you use CoPRS in your research, please use the following BibTeX entry.
   year={2025}
 }
 ```
+
+## Contact
+If you have any questions, please contact **Zhenyu Lu** (<zhenyulu.heliodore@gmail.com>) or **Jinpeng Wang** (<wjp20@mails.tsinghua.edu.cn>).
