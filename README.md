@@ -33,7 +33,7 @@ This project uses the following segmentation datasets:
 
 ### Dataset Preprocessing
 
-All dataset preprocessing scripts are located in the `prepare_dataset/` directory.
+All dataset preprocessing scripts are located in the `preparation/data/` directory.
 
 These scripts handle:
 - Data format conversion  
@@ -57,7 +57,7 @@ This repository supports local deployment and training on multi-GPU machines.
 We plan to provide a fully functional training pipeline based on **FSDP (Fully Sharded Data Parallel)** for efficient large-model training across multiple GPUs.
 
 However, the current public release **does not include the trainer implementation**.  
-The training scripts (e.g., `ray_trainer.py`, `training_scripts/`) are placeholders and will be released in a future update.
+The training scripts (e.g., `ray_trainer.py`, `scripts/train/`) are placeholders and will be released in a future update.
 
 Stay tuned for updates.
 
