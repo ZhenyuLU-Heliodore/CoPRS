@@ -247,7 +247,7 @@ if __name__ == "__main__":
     gen_sam_info_from_reasonseg(
         sam_ckpt="pretrained_models/sam_vit_h_4b8939.pth",
         anno_path=anno_path,
-        save_anno_dir="RSegCoT/data/reasonseg/reasonseg_test",
+        save_anno_dir="data/reasonseg/reasonseg_test",
         input_saved_by_datasets=False,
         split="test", st=400,
     )
