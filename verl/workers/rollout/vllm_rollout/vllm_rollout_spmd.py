@@ -142,8 +142,16 @@ class vLLMRollout(BaseRollout):
 
         if "images" in non_tensor_batch:
             vllm_inputs = []
-            for raw_prompt_ids, images in zip(non_tensor_batch.pop("raw_prompt_ids"), non_tensor_batch.pop("images")):
-                vllm_inputs.append({"prompt_token_ids": raw_prompt_ids, "multi_modal_data": {"image": images}})
+            for raw_prompt, raw_prompt_ids, images in zip(
+                    non_tensor_batch.pop("raw_prompt"),
+                    non_tensor_batch.pop("raw_prompt_ids"),
+                    non_tensor_batch.pop("images")
+            ):
+                if self.config.use_raw_prompt:
+                    vllm_inputs.append({"prompt": raw_prompt, "multi_modal_data": {"image": images}})
+
+                else:
+                    vllm_inputs.append({"prompt_token_ids": raw_prompt_ids, "multi_modal_data": {"image": images}})
         else:
             vllm_inputs = [
                 {"prompt_token_ids": raw_prompt_ids} for raw_prompt_ids in non_tensor_batch.pop("raw_prompt_ids")
@@ -171,9 +179,8 @@ class vLLMRollout(BaseRollout):
             position_ids = _repeat_interleave(position_ids, self.config.n)
             if "pixel_values" in non_tensor_batch.keys():
                 non_tensor_batch["pixel_values"] = _repeat_interleave(non_tensor_batch["pixel_values"], self.config.n)
-                non_tensor_batch["image_grid_thw"] = _repeat_interleave(
-                    non_tensor_batch["image_grid_thw"], self.config.n
-                )
+            if "image_grid_thw" in non_tensor_batch.keys():
+                non_tensor_batch["image_grid_thw"] = _repeat_interleave(non_tensor_batch["image_grid_thw"], self.config.n)
 
         sequence_ids = torch.cat([input_ids, response_ids], dim=-1)
         response_length = response_ids.size(1)

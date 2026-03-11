@@ -18,7 +18,7 @@ from typing import Optional
 from transformers import AutoConfig, AutoProcessor, AutoTokenizer, PreTrainedTokenizer, ProcessorMixin
 
 
-def get_tokenizer(model_path, correct_pad_token=True, correct_gemma=True, **kwargs) -> PreTrainedTokenizer:
+def get_tokenizer(model_path, correct_pad_token=False, correct_gemma=True, **kwargs) -> PreTrainedTokenizer:
     """Create a huggingface pretrained tokenizer.
 
     Args:

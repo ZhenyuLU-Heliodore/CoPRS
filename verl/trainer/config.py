@@ -80,7 +80,7 @@ class TrainerConfig:
     remove_previous_ckpt: bool = False
     load_init_llm_hf: bool = False
     save_checkpoint_path: Optional[str] = None
-    save_llm_hf_freq: int = 5
+    save_llm_hf_freq: Optional[int] = None
     eval_checkpoints_dir: Optional[str] = None
     eval_step_start: int = -1
     eval_step_end: int = -1

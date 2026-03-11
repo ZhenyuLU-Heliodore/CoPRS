@@ -23,6 +23,108 @@ from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 from vllm.model_executor.models.utils import is_pp_missing_parameter
 
 
+def llava_dtensor_weight_loader(actor_weights: Dict[str, torch.Tensor], vllm_model: nn.Module) -> nn.Module:
+    """
+    Load DTensor shards for LlavaForConditionalGeneration into a vLLM LLaVA model.
+
+    Rules:
+    - Language-model (text) weights in vLLM live under the "language_model." prefix.
+      We also perform LLaMA-style stacked mapping: q/k/v -> qkv_proj, gate/up -> gate_up_proj.
+    - Visual tower / projector weights keep their original names (no "language_model." prefix).
+    - Skip known non-loadable tensors (e.g., rotary inv_freq; extra bias in GPTQ artifacts).
+    """
+    # LLaMA-style stacked parameter mapping for text side.
+    # (vllm_substr, hf_substr, shard_id)
+    stacked_params_mapping = [
+        (".qkv_proj", ".q_proj", "q"),
+        (".qkv_proj", ".k_proj", "k"),
+        (".qkv_proj", ".v_proj", "v"),
+        (".gate_up_proj", ".gate_proj", 0),
+        (".gate_up_proj", ".up_proj", 1),
+    ]
+
+    # Create a stable view of vLLM parameter names; keep duplicates to avoid name collisions.
+    vllm_params = dict(vllm_model.named_parameters(remove_duplicate=False))
+
+    for actor_name, actor_weight in actor_weights.items():
+        # Skip rotary inv_freq and similar cache tensors that should not be loaded.
+        if "rotary_emb.inv_freq" in actor_name:
+            continue
+
+        # If embeddings are tied, lm_head.weight can be skipped.
+        if vllm_model.config.tie_word_embeddings and "lm_head.weight" in actor_name:
+            continue
+
+        # Heuristic: identify visual / projector parameters that should NOT get the "language_model." prefix.
+        is_visual = (
+            ("vision_tower" in actor_name)
+            or ("mm_projector" in actor_name)
+            or ("visual" in actor_name)
+        )
+
+        if not is_visual:
+            # TEXT SIDE: add "language_model." prefix and apply stacked mapping.
+            # First try stacked mapping (q/k/v, gate/up).
+            matched_stacked = False
+            for vllm_substr, hf_substr, shard_id in stacked_params_mapping:
+                if hf_substr not in actor_name:
+                    continue
+
+                vllm_name = "language_model." + actor_name.replace(hf_substr, vllm_substr)
+
+                # Skip extraneous bias tensors (e.g., from GPTQ) if the param doesn't exist in vLLM.
+                if vllm_name.endswith(".bias") and vllm_name not in vllm_params:
+                    matched_stacked = True  # treat as handled; nothing to load
+                    break
+
+                if vllm_name not in vllm_params:
+                    matched_stacked = True  # treat as handled; name doesn't exist, move on
+                    break
+
+                # Convert DTensor shard into the local tensor for this rank.
+                local = redistribute_dtensor(param_name=actor_name, loaded_weights=actor_weight)
+
+                # Use the per-parameter loader if present; otherwise fall back to the default loader.
+                vparam = vllm_params[vllm_name]
+                weight_loader = getattr(vparam, "weight_loader", default_weight_loader)
+                # For stacked params, pass shard_id ("q"/"k"/"v" or 0/1) to the weight loader.
+                weight_loader(vparam, local.to(dtype=vparam.dtype), shard_id)
+                matched_stacked = True
+                break
+
+            if matched_stacked:
+                continue
+
+            # Non-stacked params on text side: just add the "language_model." prefix and load directly.
+            vllm_name = "language_model." + actor_name
+
+            if vllm_name.endswith(".bias") and vllm_name not in vllm_params:
+                continue  # skip extraneous bias
+
+            if vllm_name not in vllm_params:
+                continue  # param not present in the vLLM module graph
+
+            local = redistribute_dtensor(param_name=actor_name, loaded_weights=actor_weight)
+            vparam = vllm_params[vllm_name]
+            weight_loader = getattr(vparam, "weight_loader", default_weight_loader)
+            weight_loader(vparam, local.to(dtype=vparam.dtype))
+
+        else:
+            # VISUAL / PROJECTOR SIDE: keep original names; no "language_model." prefix.
+            vllm_name = actor_name
+
+            if vllm_name.endswith(".bias") and vllm_name not in vllm_params:
+                continue  # skip extraneous bias
+
+            if vllm_name not in vllm_params:
+                continue  # param not present
+
+            local = redistribute_dtensor(param_name=actor_name, loaded_weights=actor_weight)
+            vparam = vllm_params[vllm_name]
+            weight_loader = getattr(vparam, "weight_loader", default_weight_loader)
+            weight_loader(vparam, local.to(dtype=vparam.dtype))
+
+
 def gemma_dtensor_weight_loader(actor_weights: Dict, vllm_model: nn.Module) -> nn.Module:
     stacked_params_mapping = [
         # (param_name, shard_name, shard_id)
@@ -313,6 +415,7 @@ __MODEL_DTENSOR_WEIGHT_LOADER_REGISTRY__ = {
     "DeepseekV2ForCausalLM": deepseekv2_dtensor_weight_loader,
     "Qwen2VLForConditionalGeneration": qwen2vl_dtensor_weight_loader,
     "Qwen2_5_VLForConditionalGeneration": qwen2vl_dtensor_weight_loader,
+    "LlavaForConditionalGeneration": llava_dtensor_weight_loader,
 }
 
 

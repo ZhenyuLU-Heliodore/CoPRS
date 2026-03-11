@@ -41,6 +41,7 @@ class RolloutConfig:
     """auto keys"""
     prompt_length: int = field(default=-1, init=False)
     response_length: int = field(default=-1, init=False)
+    use_raw_prompt: bool = False
 
     def to_dict(self):
         return asdict(self)

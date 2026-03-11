@@ -96,6 +96,7 @@ def main_task(config: PPOConfig):
         val_reward_fn=None,
     )
 
+    trainer.create_dataloader()
     trainer.init_workers()
     trainer.fit()
 

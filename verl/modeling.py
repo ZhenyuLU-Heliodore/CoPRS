@@ -20,6 +20,7 @@ from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import (
 @dataclass
 class Qwen2_5_VLWithSegOutput(Qwen2_5_VLCausalLMOutputWithPast):
     seg_outputs: Optional[Dict[str, torch.Tensor]] = None
+    image_hidden_states: Optional[torch.FloatTensor] = None  # For consistence with llava
 
 
 class VLRefSegCore(nn.Module):
@@ -402,7 +403,6 @@ def build_VLRefSegCore(
         is_trainable=True,
 ):
     if token_embed_dim is None:
-        assert llm.get_input_embeddings().embedding_dim == getattr(llm.config, "hidden_size")
         token_embed_dim = llm.get_input_embeddings().embedding_dim
 
     heatmap_head = MHAttnHeatmapHead(llm_dim=token_embed_dim)
@@ -428,6 +428,8 @@ def build_VLRefSegCore(
         mask_decoder=mask_decoder,
         special_token_id=ref_pos_id,
     )
+    print("Core params:", sum(p.numel() for p in core.parameters()))
+
     if is_trainable:
         core.train()
     else:

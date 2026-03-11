@@ -55,14 +55,22 @@ def get_fsdp_wrap_policy(model: PreTrainedModel):
         module: The module to get wrap policy for
     """
     transformer_cls_to_wrap = set()
-    for module in model._no_split_modules:
-        transformer_cls = get_module_class_from_name(model, module)
-        if transformer_cls is None:
-            raise Exception(f"Cannot find {module} in pretrained model.")
-        else:
-            transformer_cls_to_wrap.add(transformer_cls)
+    for name in getattr(model, "_no_split_modules", ()):
+        cls = get_module_class_from_name(model, name)
+        if cls is not None:  # don't raise
+            transformer_cls_to_wrap.add(cls)
 
-    return partial(transformer_auto_wrap_policy, transformer_layer_cls=transformer_cls_to_wrap)
+    # fallback: infer decoder layer classes present in the model
+    if not transformer_cls_to_wrap:
+        inferred = {m.__class__ for m in model.modules()
+                    if m.__class__.__name__.endswith("DecoderLayer")}
+        transformer_cls_to_wrap.update(inferred)
+
+    if not transformer_cls_to_wrap:  # nothing found -> no auto wrap
+        return None
+
+    return partial(transformer_auto_wrap_policy,
+                   transformer_layer_cls=transformer_cls_to_wrap)
 
 
 @torch.no_grad()

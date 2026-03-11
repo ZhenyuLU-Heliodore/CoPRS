@@ -38,6 +38,7 @@ __all__ = [
 
 @dataclass
 class WorkerConfig:
+    llm_version: str = "qwen-2.5"
     hybrid_engine: bool = False
     supp_bf16: bool = True
     actor: ActorConfig = field(default_factory=ActorConfig)

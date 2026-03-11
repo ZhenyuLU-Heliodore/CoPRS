@@ -98,6 +98,7 @@ def main_task(config: PPOConfig):
         val_reward_fn=None,
     )
 
+    trainer.create_dataloader(mode="eval")
     trainer.init_workers()
     trainer.evaluate()
 
