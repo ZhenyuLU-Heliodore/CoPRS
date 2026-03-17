@@ -226,7 +226,6 @@ tzdata==2025.2
 urllib3==2.4.0
 uvicorn==0.34.2
 uvloop==0.21.0
-vggt @ file:///mnt/dolphinfs/ssd_pool/docker/user/hadoop-aipnlp/3A/multimodal/wangjinpeng08/zhenyu/Geo-REPA/vggt
 vllm==0.8.5.post1
 wadler_lindig==0.1.7
 wandb==0.19.11
